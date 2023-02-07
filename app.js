@@ -1,13 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const usersRouter = require('./routes/user');
+const userRouter = require('./Router/UserRouter');
+const dotenv = require('dotenv');
 const app = express();
+
+dotenv.config({path: './config.env'});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-app.use('/user', usersRouter);
-
-mongoose.connect('mongodb://127.0.0.1:27017/JsProject');
+//Router
+app.use('/user', userRouter);
+//DB connect
+mongoose.connect(process.env.MONGO_URL+process.env.DBNAME);
 
 module.exports = app;
