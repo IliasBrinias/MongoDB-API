@@ -7,26 +7,57 @@ const MINE_TYPE_MAP = {
     'image/jpg':  'jpg',
 }
 
-function checkAge(req, res, next) {
-    const userAge = req.body.age;
-    if (userAge < 18) {
-        res.status(response_code.BAD_REQUEST).send({
+function checkInputPost(req, res, next) {
+    if (req.body.name === undefined || req.body.age === undefined || req.body.email === undefined ){
+        return res.status(response_code.BAD_REQUEST).json({
             success:false,
-            msg:error_msg.USE_API_WITH_CAUTION
+            msg:error_msg.COMPLETE_ALL_THE_FIELDS
         });
-    } else {
-        next();
     }
+    next();
+}
+
+function checkInputFormat(req, res, next) {
+    if (req.body.email !=null){
+        const regExp = new RegExp("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
+        if (!regExp.test(req.body.email)){
+            return res.status(response_code.BAD_REQUEST).json({
+                success:false,
+                msg:error_msg.EMAIL_BAD_FORMAT
+            });
+        }
+    }
+    if (req.body.age !=null) {
+        if (isNaN(req.body.age)) {
+            return res.status(response_code.BAD_REQUEST).json({
+                success: false,
+                msg: error_msg.NO_VALID_AGE
+            });
+        }
+        if (req.body.age < 18) {
+            res.msg = error_msg.USE_API_WITH_CAUTION;
+        }
+    }
+    next();
+}
+function checkInputPatch(req, res, next) {
+    if (req.body.name === undefined && req.body.age === undefined && req.body.email === undefined){
+        return res.status(response_code.BAD_REQUEST).json({
+            success:false,
+            msg:error_msg.COMPLETE_AT_LEAST_ONE_FIELD
+        });
+    }
+    next();
 }
 
 const fileUpload = multer({
     limits: 500000,
     storage: multer.diskStorage({
         destination: (req,file,cb)=>{
-            cb(null,`${__dirname}/../public/img/user`);
+            cb(null,`${__dirname}/../photo`);
         },
         filename:(req,file,cb)=>{
-            cb(null,file.originalname);
+            cb(null,req.params.id+"."+MINE_TYPE_MAP[file.mimetype]);
         }
     }),
     fileFilter:(req,file,cb) => {
@@ -37,6 +68,8 @@ const fileUpload = multer({
 })
 
 module.exports = {
-    checkAge,
+    checkInputPost,
+    checkInputPatch,
+    checkInputFormat,
     fileUpload
 }

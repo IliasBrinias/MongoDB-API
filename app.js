@@ -11,6 +11,7 @@ app.use(express.urlencoded({ extended: false }));
 //Router
 app.use('/user', userRouter);
 //DB connect
+mongoose.set('strictQuery', true);
 mongoose.connect(process.env.MONGO_URL+process.env.DBNAME);
 
 module.exports = app;

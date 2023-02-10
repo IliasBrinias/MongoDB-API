@@ -10,7 +10,7 @@ const User = mongoose.model("User",new mongoose.Schema({
     },
     photo:{
         type:String,
-        default:"default.jpg"
+        default:"default.png"
     }
 }));
 

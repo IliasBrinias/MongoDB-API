@@ -1,8 +1,71 @@
 const User = require("../Model/User");
 const error_msg = require("../Constants/ErrorMessages");
 const response_code = require("../Constants/HttpResponse");
+const path = require("path");
 
-const getAllUsers = (req, res) => {
+const uploadPhoto = (req, res) => {
+    if (!req.file){
+        return  res.status(response_code.BAD_REQUEST).json({
+            message: error_msg.PHOTO_NOT_FOUND
+        });
+    }
+    User.findById(req.params.id, async (err, user) => {
+        if (user === null) {
+            return res.status(response_code.BAD_REQUEST).json({
+                success: false,
+                msg: error_msg.USER_NOT_FOUND
+            });
+        }
+        user.photo = req.file.filename;
+        const updUser = await User.findOneAndUpdate({_id: req.params.id}, user, {
+            new: true,
+        });
+        if (updUser === undefined) {
+            res.status(response_code.BAD_REQUEST).json({
+                message: error_msg.USER_NOT_FOUND
+            });
+        }
+        res.json(updUser);
+    });
+}
+const getPhoto = (req, res) => {
+    User.findById(req.params.id, async (err, user) => {
+        if (user === null) {
+            return res.status(response_code.BAD_REQUEST).json({
+                success: false,
+                msg: error_msg.USER_NOT_FOUND
+            });
+        }
+        const fileName = user.photo
+        if (fileName === "default.png"){
+            return res.status(response_code.BAD_REQUEST).json({
+                success: false,
+                msg: error_msg.PHOTO_NOT_FOUND
+            });
+        }
+        const options = {
+            root: path.join(__dirname, '/../photo/'),
+            dotfiles: 'deny',
+            headers: {
+                'x-timestamp': Date.now(),
+                'x-sent': true
+            }
+        }
+        res.sendFile(fileName, options, function (err) {
+            if (err) {
+                return res.status(response_code.BAD_REQUEST)
+                          .json({
+                              success: false,
+                              msg: error_msg.USER_NOT_FOUND
+                          });
+            }
+        })
+    });
+}
+const getUsers = (req, res) => {
+    if (req.query.email != null){
+        return findUserWithEmail(req, res);
+    }
     User.find({}, (err, users) => {
         if (err) {
             return res.status(response_code.SERVER_ERROR).json({
@@ -15,31 +78,12 @@ const getAllUsers = (req, res) => {
 };
 const addUser = (req, res) => {
 
-    if (req.body.name === undefined || req.body.age === undefined || req.body.email === undefined){
-        return res.status(response_code.BAD_REQUEST).json({
-            success:false,
-            msg:error_msg.COMPLETE_ALL_THE_FIELDS
-        });
-    }
-    const regExp = new RegExp("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
-    if (!regExp.test(req.body.email)){
-        return res.status(response_code.BAD_REQUEST).json({
-            success:false,
-            msg:error_msg.EMAIL_BAD_FORMAT
-        });
-    }
-    if (isNaN(req.body.age)) {
-        return res.status(response_code.BAD_REQUEST).json({
-            success:false,
-            msg:error_msg.NO_VALID_AGE
-        });
-    }
-
     const user = new User({
         name:req.body.name,
         age:req.body.age,
-        email:req.body.email,
+        email:req.body.email
     })
+
     user.save({}, (err, user) => {
         if (err) {
             return res.status(response_code.BAD_REQUEST).json({
@@ -47,8 +91,15 @@ const addUser = (req, res) => {
                 msg:error_msg.USER_EXISTS
             });
         }
-        res.json(user);
+        res.json({
+            id:user.id,
+            name:user.name,
+            age:user.age,
+            email:user.email,
+            msg:res?.msg
+        });
     });
+
 };
 const getUser = (req, res) => {
     User.findById(req.params.id, (err, user) => {
@@ -64,17 +115,24 @@ const getUser = (req, res) => {
 const updateUser = async (req, res) => {
     try {
         if (req.body.age !== undefined){
-            if (req.body.age<18) return res.status(response_code.BAD_REQUEST).send(error_msg.USE_API_WITH_CAUTION);
+            if (req.body.age<18) res.msg = error_msg.USE_API_WITH_CAUTION;
         }
-        const updUser = await User.findOneAndUpdate(req.params.id, req.body, {
+        let updUser = await User.findOneAndUpdate({_id: req.params.id}, req.body, {
             new: true,
+            upsert: true
         });
         if (updUser === undefined) {
             res.status(response_code.BAD_REQUEST).json({
                 message: error_msg.USER_NOT_FOUND
             });
         }
-        res.json(updUser);
+        res.json({
+            id:updUser.id,
+            name:updUser.name,
+            age:updUser.age,
+            email:updUser.email,
+            msg:res?.msg
+        });
     } catch (error) {
         res.status(response_code.SERVER_ERROR).json({
             message: error.message
@@ -89,26 +147,28 @@ const deleteUser = async (req, res) => {
                 msg:error_msg.USER_NOT_FOUND
             });
         }
-        res.json(user);
+        res.json();
     });
 };
 const findUserWithEmail = async (req, res) => {
-    User.find(req.query.email,(err, user) => {
-        if (user === null){
+    User.find({email: {'$regex': req.query.email} },(err, users) => {
+        if (users === null || users === undefined){
             return res.status(response_code.BAD_REQUEST).json({
                 success:false,
                 msg:error_msg.USER_NOT_FOUND
             });
         }
-        res.json(user);
+        const userResponse = [];
+        users.forEach(u=>userResponse.push({name:u.name}));
+        res.json(userResponse);
     });
 };
-
 module.exports = {
-    getAllUsers,
+    getUsers,
     addUser,
     getUser,
     updateUser,
     deleteUser,
-    findUserWithEmail
+    uploadPhoto,
+    getPhoto
 }
