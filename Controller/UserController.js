@@ -2,6 +2,7 @@ const User = require("../Model/User");
 const error_msg = require("../Constants/ErrorMessages");
 const response_code = require("../Constants/HttpResponse");
 const path = require("path");
+const fs = require("fs");
 
 const uploadPhoto = (req, res) => {
     if (!req.file){
@@ -145,8 +146,17 @@ const deleteUser = async (req, res) => {
                 msg:error_msg.USER_NOT_FOUND
             });
         }
+        if (user.photo !== "default.png"){
+            const fs = require('fs');
+            fs.unlink(path.join(__dirname, '/../photo/user/') + user.photo, (err) => {
+                if (err) {
+                    throw err;
+                }
+            });
+        }
         res.status(response_code.OK).json();
     });
+
 };
 const findUserWithEmail = async (req, res) => {
     User.find({email: {'$regex': req.query.email} },(err, users) => {
