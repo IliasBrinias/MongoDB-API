@@ -10,7 +10,7 @@ const uploadPhoto = (req, res) => {
         });
     }
     User.findById(req.params.id, async (err, user) => {
-        if (user === null) {
+        if (user == null) {
             return res.status(response_code.BAD_REQUEST).json({
                 success: false,
                 msg: error_msg.USER_NOT_FOUND
@@ -20,36 +20,34 @@ const uploadPhoto = (req, res) => {
         const updUser = await User.findOneAndUpdate({_id: req.params.id}, user, {
             new: true,
         });
-        if (updUser === undefined) {
+        if (updUser == null) {
             res.status(response_code.BAD_REQUEST).json({
                 message: error_msg.USER_NOT_FOUND
             });
         }
-        res.json(updUser);
+        res.status(response_code.OK).json(updUser);
     });
 }
 const getPhoto = (req, res) => {
     User.findById(req.params.id, async (err, user) => {
-        if (user === null) {
+        if (user == null) {
             return res.status(response_code.BAD_REQUEST).json({
                 success: false,
                 msg: error_msg.USER_NOT_FOUND
             });
         }
         const fileName = user.photo
-        if (fileName === "default.png"){
-            return res.status(response_code.BAD_REQUEST).json({
-                success: false,
-                msg: error_msg.PHOTO_NOT_FOUND
-            });
-        }
         const options = {
-            root: path.join(__dirname, '/../photo/'),
+            root: path.join(__dirname, '/../photo/user/'),
             dotfiles: 'deny',
             headers: {
                 'x-timestamp': Date.now(),
                 'x-sent': true
             }
+        }
+
+        if (fileName === "default.png"){
+            options.root = path.join(__dirname, '/../photo/');
         }
         res.sendFile(fileName, options, function (err) {
             if (err) {
@@ -73,7 +71,7 @@ const getUsers = (req, res) => {
                 message: err
             });
         }
-        res.json(users);
+        res.status(response_code.OK).json(users);
     });
 };
 const addUser = (req, res) => {
@@ -91,7 +89,7 @@ const addUser = (req, res) => {
                 msg:error_msg.USER_EXISTS
             });
         }
-        res.json({
+        res.status(response_code.OK).json({
             id:user.id,
             name:user.name,
             age:user.age,
@@ -103,13 +101,13 @@ const addUser = (req, res) => {
 };
 const getUser = (req, res) => {
     User.findById(req.params.id, (err, user) => {
-        if (user === null){
+        if (user == null){
             return res.status(response_code.BAD_REQUEST).json({
                 success:false,
                 msg:error_msg.USER_NOT_FOUND
             });
         }
-        res.json(user);
+        res.status(response_code.OK).json(user);
     });
 };
 const updateUser = async (req, res) => {
@@ -121,12 +119,12 @@ const updateUser = async (req, res) => {
             new: true,
             upsert: true
         });
-        if (updUser === undefined) {
+        if (updUser == null) {
             res.status(response_code.BAD_REQUEST).json({
                 message: error_msg.USER_NOT_FOUND
             });
         }
-        res.json({
+        res.status(response_code.OK).json({
             id:updUser.id,
             name:updUser.name,
             age:updUser.age,
@@ -141,18 +139,18 @@ const updateUser = async (req, res) => {
 };
 const deleteUser = async (req, res) => {
     User.findByIdAndDelete(req.params.id,(err, user) => {
-        if (user === null){
+        if (user == null){
             return res.status(response_code.BAD_REQUEST).json({
                 success:false,
                 msg:error_msg.USER_NOT_FOUND
             });
         }
-        res.json();
+        res.status(response_code.OK).json();
     });
 };
 const findUserWithEmail = async (req, res) => {
     User.find({email: {'$regex': req.query.email} },(err, users) => {
-        if (users === null || users === undefined){
+        if (users == null){
             return res.status(response_code.BAD_REQUEST).json({
                 success:false,
                 msg:error_msg.USER_NOT_FOUND
@@ -160,7 +158,7 @@ const findUserWithEmail = async (req, res) => {
         }
         const userResponse = [];
         users.forEach(u=>userResponse.push({name:u.name}));
-        res.json(userResponse);
+        res.status(response_code.OK).json(userResponse);
     });
 };
 module.exports = {

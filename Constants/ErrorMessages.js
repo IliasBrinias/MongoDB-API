@@ -9,5 +9,7 @@ module.exports = Object.freeze({
     NO_VALID_AGE:"Age not valid",
     COMPLETE_AT_LEAST_ONE_FIELD:"Complete at least one field",
     PHOTO_NOT_FOUND:"Photo not found",
-    PROFILE_NOT_FOUND:"Profile not found"
+    PROFILE_NOT_FOUND:"Profile not found",
+    BOOK_EXISTS:"Book exists",
+    BOOK_NOT_FOUND:"Book not found"
 });

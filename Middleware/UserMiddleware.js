@@ -1,6 +1,7 @@
 const response_code = require("../Constants/HttpResponse");
 const error_msg = require("../Constants/ErrorMessages");
 const multer = require("multer");
+const Book = require("../Model/Book");
 const MINE_TYPE_MAP = {
     'image/png':  'png',
     'image/jpeg': 'jpeg',
@@ -49,27 +50,21 @@ function checkInputPatch(req, res, next) {
     }
     next();
 }
-
-const fileUpload = multer({
-    limits: 500000,
-    storage: multer.diskStorage({
-        destination: (req,file,cb)=>{
-            cb(null,`${__dirname}/../photo`);
-        },
-        filename:(req,file,cb)=>{
-            cb(null,req.params.id+"."+MINE_TYPE_MAP[file.mimetype]);
+function checkIfBookExists(req, res, next){
+    Book.findById(req.params.id, (err, book) => {
+        if (book === null){
+            return res.status(response_code.BAD_REQUEST).json({
+                success:false,
+                msg:error_msg.BOOK_NOT_FOUND
+            });
         }
-    }),
-    fileFilter:(req,file,cb) => {
-        const isValid = file.mimetype in MINE_TYPE_MAP;
-        let error = isValid? null: new Error(error_msg.INVALID_MINE_TYPE);
-        cb(error,isValid);
-    }
-})
+        next();
+    });
+}
+
 
 module.exports = {
     checkInputPost,
     checkInputPatch,
-    checkInputFormat,
-    fileUpload
+    checkInputFormat
 }
